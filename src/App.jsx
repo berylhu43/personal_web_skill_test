@@ -1,8 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, useScroll, useSpring } from 'framer-motion'
-import { profile, projects, stills } from './data.js'
-
-const BASE = import.meta.env.BASE_URL
+import { profile, projects, trajectory } from './data.js'
 
 /* Reveal-on-scroll wrapper */
 function Reveal({ children, delay = 0, y = 26, className = '' }) {
@@ -73,12 +71,12 @@ function TopBar({ tc }) {
       <a href="#top" className="mark">
         <span className="rec" />
         YUXUAN&nbsp;HU
+        <span className="role">{profile.roles.join(' / ')}</span>
       </a>
       <div className="right">
         <nav>
           <a href="#work">Work</a>
-          <a href="#think">How I think</a>
-          <a href="#next">What's next</a>
+          <a href="#next">Trajectory</a>
           <a href="#contact">Contact</a>
         </nav>
         <span className="timecode" aria-hidden="true">{tc}</span>
@@ -91,18 +89,6 @@ function Hero() {
   return (
     <section className="hero" id="top">
       <div className="shell">
-        <motion.div
-          className="slate"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.1 }}
-        >
-          <span><b>{profile.roles.join(' / ')}</b></span>
-          <span>MPP · UChicago Harris</span>
-          <span>MFA Film · SAIC</span>
-          <span>Reel 01</span>
-        </motion.div>
-
         <h1>
           <motion.span
             style={{ display: 'block' }}
@@ -110,60 +96,33 @@ function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
-            {profile.headline[0]}
+            I build systems that turn messy, unstructured information into{' '}
+            <span className="key">usable, structured data</span> —
           </motion.span>
           <motion.span
             className="l2"
             style={{ display: 'block' }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.34, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.9, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
           >
-            It's the same thing I went to <span className="key">film school</span> to do.
+            and I care as much about{' '}
+            <span className="em">how people are represented in it</span> as I do about the
+            metrics.
           </motion.span>
         </h1>
-
-        <motion.p
-          className="framing"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.55 }}
-        >
-          The through-line has never been the medium. In film I used a camera to get close to
-          people and under-represented cultures; now I use models to study the same questions
-          at a different scale. The tools changed — <span className="em">the obsession
-          didn't.</span> I bring a visual and narrative sensibility into technical work, and I
-          care as much about how people are represented in the data as I do about the metrics.
-        </motion.p>
 
         <motion.div
           className="scroll-cue"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
+          transition={{ duration: 0.8, delay: 0.75 }}
         >
           <span className="ln" />
           Roll
         </motion.div>
       </div>
     </section>
-  )
-}
-
-function Metric({ m }) {
-  if (m.pending) {
-    return (
-      <div className="metric pending">
-        <div className="val">metric pending</div>
-        <div className="lbl">to confirm</div>
-      </div>
-    )
-  }
-  return (
-    <div className="metric">
-      <div className="val">{m.value}</div>
-      <div className="lbl">{m.label}</div>
-    </div>
   )
 }
 
@@ -178,17 +137,12 @@ function Work() {
         </Reveal>
 
         <div className="work-grid">
-          {projects.map((p, i) => {
-            const inner = (
-              <>
+          {projects.map((p, i) => (
+            <Reveal key={p.name} delay={(i % 2) * 0.08}>
+              <a className="frame" href={p.repo} target="_blank" rel="noreferrer">
                 <div className="fhead">
                   <span>Frame {String(i + 1).padStart(2, '0')} / 04</span>
                   <span className="kind">{p.kind}</span>
-                </div>
-                <div className="metrics">
-                  {p.metrics.map((m, j) => (
-                    <Metric key={j} m={m} />
-                  ))}
                 </div>
                 <h3>{p.name}</h3>
                 <p>{p.blurb}</p>
@@ -197,139 +151,76 @@ function Work() {
                     <span key={t}>{t}</span>
                   ))}
                 </div>
-                {p.repo ? (
-                  <span className="src">View source ↗</span>
-                ) : (
-                  <span className="src none">Source — on request</span>
-                )}
-              </>
-            )
-            return (
-              <Reveal key={p.name} delay={(i % 2) * 0.08}>
-                {p.repo ? (
-                  <a className="frame" href={p.repo} target="_blank" rel="noreferrer">
-                    {inner}
-                  </a>
-                ) : (
-                  <div className="frame">{inner}</div>
-                )}
-              </Reveal>
-            )
-          })}
-        </div>
-
-        <p className="work-note">
-          ▚ Metrics shown as “pending” are awaiting confirmed numbers — nothing here is
-          estimated or inflated.
-        </p>
-      </div>
-    </section>
-  )
-}
-
-function Still({ src, caption }) {
-  const [failed, setFailed] = useState(false)
-  return (
-    <figure className="still">
-      <span className="ct tl" />
-      <span className="ct tr" />
-      <span className="ct bl" />
-      <span className="ct br" />
-      {!failed && (
-        <img src={`${BASE}${src}`} alt={caption} onError={() => setFailed(true)} loading="lazy" />
-      )}
-      {failed && (
-        <div className="ph">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
-            <rect x="2" y="6" width="20" height="13" rx="1.5" />
-            <path d="M2 9h20M7 6v3M12 6v3M17 6v3" />
-            <circle cx="12" cy="13" r="2.6" />
-          </svg>
-          film still
-          <span style={{ color: 'var(--fg-faint)', textTransform: 'none', letterSpacing: '0.04em' }}>
-            add {src}
-          </span>
-        </div>
-      )}
-      <figcaption>{caption}</figcaption>
-    </figure>
-  )
-}
-
-function Think() {
-  return (
-    <section id="think">
-      <div className="shell">
-        <Reveal className="section-head">
-          <span className="tc">TC 00:02 — METHOD</span>
-          <h2>How I think</h2>
-          <span className="note">Same discipline, different tools</span>
-        </Reveal>
-
-        <div className="think-grid">
-          <Reveal className="think-copy">
-            <p>
-              Before models, there was the camera. An MFA in film production taught me
-              fieldwork: how to enter a community, earn trust, and represent people honestly on
-              screen.
-            </p>
-            <p className="pull">
-              Documentary fieldwork and responsible data work are the same discipline under a
-              different name.
-            </p>
-            <p>
-              Collecting survey data in the field, handling community records, deciding what a
-              model is allowed to infer about someone — these are{' '}
-              <span className="accent">representation problems</span> before they are technical
-              ones. The camera taught me to be accountable for the frame I choose. I bring that
-              same accountability to the data.
-            </p>
-          </Reveal>
-
-          <Reveal className="stills" delay={0.12}>
-            {stills.map((s) => (
-              <Still key={s.src} src={s.src} caption={s.caption} />
-            ))}
-          </Reveal>
+                <span className="src">View source ↗</span>
+              </a>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
   )
 }
 
-function Next() {
+function Trajectory() {
   return (
     <section id="next" className="next">
       <div className="shell">
         <Reveal className="section-head">
-          <span className="tc">TC 00:03 — TRAJECTORY</span>
-          <h2>What's next</h2>
+          <span className="tc">TC 00:02 — TRAJECTORY</span>
+          <h2>Trajectory</h2>
           <span className="note">Direction, not a finished product</span>
         </Reveal>
 
-        <div className="next-grid">
-          <Reveal>
-            <h2>
-              Visual storytelling, <span className="arc">built with AI.</span>
-            </h2>
-          </Reveal>
-          <Reveal className="body" delay={0.1}>
-            <p>
-              I'm working toward the intersection I've been circling the whole time: combining
-              visual storytelling with AI engineering — <span className="em">AI-assisted video
-              and animation.</span>
-            </p>
-            <p>
-              I don't have a finished product to show here, and I won't pretend otherwise. This
-              is a direction and a trajectory. Right now I'm putting the engineering foundation
-              first, and being deliberate about it.
-            </p>
-            <span className="status">
-              <span className="d" />
-              In progress — building the foundation
-            </span>
-          </Reveal>
+        <Reveal>
+          <p className="traj-lede">
+            One throughline, four stages —{' '}
+            <span className="em">from the camera, to the model, to the agent.</span>
+          </p>
+        </Reveal>
+
+        <div className="traj">
+          <div className="traj-line" aria-hidden="true">
+            <motion.div
+              className="seg-done"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.div
+              className="seg-future"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.8, delay: 1.05, ease: 'linear' }}
+            />
+          </div>
+
+          <div className="traj-stages">
+            {trajectory.map((s, i) => (
+              <motion.div
+                className={`stage ${s.state}`}
+                key={s.label}
+                initial={{ opacity: 0, y: 16 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-60px' }}
+                transition={{ duration: 0.5, delay: 0.25 + i * 0.28, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span className="node" />
+                <span className="s-tag">{s.tag}</span>
+                <span className="s-label">{s.label}</span>
+                <span className="s-note">{s.note}</span>
+              </motion.div>
+            ))}
+          </div>
         </div>
+
+        <Reveal delay={0.1}>
+          <p className="traj-foot">
+            <span className="d" />
+            The last two stages are a direction and a trajectory — not finished products.
+          </p>
+        </Reveal>
       </div>
     </section>
   )
@@ -340,11 +231,9 @@ function Credits() {
     <section id="contact" className="credits">
       <div className="shell">
         <Reveal>
-          <span className="tc" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', letterSpacing: '0.16em', color: 'var(--accent)' }}>
-            TC 00:04 — END CREDITS
-          </span>
-          <h2 className="big" style={{ marginTop: '1.4rem' }}>
-            Let's build something that <span className="accent">understands people.</span>
+          <span className="tc tc-credits">TC 00:03 — END CREDITS</span>
+          <h2 className="big">
+            Cut. Render. <span className="accent">Ship.</span>
           </h2>
         </Reveal>
 
@@ -354,18 +243,6 @@ function Credits() {
             <a className="clink" href={profile.github} target="_blank" rel="noreferrer">
               ↗ github.com/berylhu43
             </a>
-          </div>
-        </Reveal>
-
-        <Reveal delay={0.16}>
-          <div className="roll">
-            {profile.education.map((e) => (
-              <div className="roll-item" key={e.degree}>
-                <span className="deg">{e.degree}</span>
-                <span className="sch">{e.school}</span>
-                <span className="det">{e.detail}</span>
-              </div>
-            ))}
           </div>
         </Reveal>
       </div>
@@ -403,8 +280,7 @@ export default function App() {
       <main>
         <Hero />
         <Work />
-        <Think />
-        <Next />
+        <Trajectory />
         <Credits />
       </main>
       <footer className="shell">
