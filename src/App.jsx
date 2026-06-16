@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, useScroll, useSpring } from 'framer-motion'
 import { profile, projects, trajectory } from './data.js'
 
@@ -31,36 +31,44 @@ function Chrome() {
   )
 }
 
-/* Live timecode at 24fps — quietly ties film + data precision */
+/* Timecode at 24fps — click to play/pause, like an editing timeline.
+   Paused by default; accumulates elapsed frames only while playing. */
+const padTC = (n) => String(n).padStart(2, '0')
+function formatTC(frames) {
+  const f = frames % 24
+  const s = Math.floor(frames / 24) % 60
+  const m = Math.floor(frames / (24 * 60)) % 60
+  const h = Math.floor(frames / (24 * 3600)) % 24
+  return `${padTC(h)}:${padTC(m)}:${padTC(s)}:${padTC(f)}`
+}
 function useTimecode() {
-  const [tc, setTc] = useState('00:00:00:00')
+  // Plays by default, except for visitors who prefer reduced motion.
+  const [playing, setPlaying] = useState(
+    () =>
+      typeof window === 'undefined' ||
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  )
+  const [frames, setFrames] = useState(0)
+  const acc = useRef(0)
   useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (reduce) {
-      setTc('24:00:00:00')
-      return
-    }
-    const start = performance.now()
+    if (!playing) return
     let raf
-    const pad = (n) => String(n).padStart(2, '0')
-    const tick = (now) => {
-      const elapsed = (now - start) / 1000
-      const totalFrames = Math.floor(elapsed * 24)
-      const f = totalFrames % 24
-      const s = Math.floor(totalFrames / 24) % 60
-      const m = Math.floor(totalFrames / (24 * 60)) % 60
-      const h = Math.floor(totalFrames / (24 * 3600)) % 24
-      setTc(`${pad(h)}:${pad(m)}:${pad(s)}:${pad(f)}`)
-      raf = requestAnimationFrame(tick)
+    let last = performance.now()
+    const loop = (now) => {
+      acc.current += ((now - last) / 1000) * 24
+      last = now
+      setFrames(Math.floor(acc.current))
+      raf = requestAnimationFrame(loop)
     }
-    raf = requestAnimationFrame(tick)
+    raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [])
-  return tc
+  }, [playing])
+  return { tc: formatTC(frames), playing, toggle: () => setPlaying((p) => !p) }
 }
 
-function TopBar({ tc }) {
+function TopBar() {
   const [scrolled, setScrolled] = useState(false)
+  const { tc, playing, toggle } = useTimecode()
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
     window.addEventListener('scroll', onScroll, { passive: true })
@@ -79,7 +87,16 @@ function TopBar({ tc }) {
           <a href="#next">Trajectory</a>
           <a href="#contact">Contact</a>
         </nav>
-        <span className="timecode" aria-hidden="true">{tc}</span>
+        <button
+          type="button"
+          className={`timecode ${playing ? 'playing' : ''}`}
+          onClick={toggle}
+          title={playing ? 'Pause timecode' : 'Click to play'}
+          aria-label={playing ? 'Pause timecode' : 'Play timecode'}
+        >
+          <span className="tc-ico" aria-hidden="true">{playing ? '⏸' : '▶'}</span>
+          <span className="tc-val">{tc}</span>
+        </button>
       </div>
     </header>
   )
@@ -97,18 +114,7 @@ function Hero() {
             transition={{ duration: 0.9, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
           >
             I build systems that turn messy, unstructured information into{' '}
-            <span className="key">usable, structured data</span> —
-          </motion.span>
-          <motion.span
-            className="l2"
-            style={{ display: 'block' }}
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
-          >
-            and I care as much about{' '}
-            <span className="em">how people are represented in it</span> as I do about the
-            metrics.
+            <span className="key">usable, structured data</span>.
           </motion.span>
         </h1>
 
@@ -132,13 +138,11 @@ function Work() {
       <div className="shell">
         <Reveal className="section-head">
           <span className="tc">TC 00:01 — SELECTED WORK</span>
-          <h2>Core technical work</h2>
-          <span className="note">04 projects</span>
         </Reveal>
 
         <div className="work-grid">
           {projects.map((p, i) => (
-            <Reveal key={p.name} delay={(i % 2) * 0.08}>
+            <Reveal key={p.name} delay={(i % 2) * 0.08} className="work-cell">
               <a className="frame" href={p.repo} target="_blank" rel="noreferrer">
                 <div className="fhead">
                   <span>Frame {String(i + 1).padStart(2, '0')} / 04</span>
@@ -167,8 +171,6 @@ function Trajectory() {
       <div className="shell">
         <Reveal className="section-head">
           <span className="tc">TC 00:02 — TRAJECTORY</span>
-          <h2>Trajectory</h2>
-          <span className="note">Direction, not a finished product</span>
         </Reveal>
 
         <Reveal>
@@ -199,16 +201,33 @@ function Trajectory() {
           <div className="traj-stages">
             {trajectory.map((s, i) => (
               <motion.div
-                className={`stage ${s.state}`}
+                className={`stage ${s.state} ${s.link ? 'has-link' : ''}`}
                 key={s.label}
                 initial={{ opacity: 0, y: 16 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-60px' }}
                 transition={{ duration: 0.5, delay: 0.25 + i * 0.28, ease: [0.22, 1, 0.36, 1] }}
               >
-                <span className="node" />
+                {s.link ? (
+                  <a
+                    className="node node-link"
+                    href={s.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Watch: ${s.label}`}
+                  />
+                ) : (
+                  <span className="node" />
+                )}
                 <span className="s-tag">{s.tag}</span>
-                <span className="s-label">{s.label}</span>
+                {s.link ? (
+                  <a className="s-link" href={s.link} target="_blank" rel="noreferrer">
+                    <span className="s-label">{s.label}</span>
+                    <span className="s-watch">▶ Watch ↗</span>
+                  </a>
+                ) : (
+                  <span className="s-label">{s.label}</span>
+                )}
                 <span className="s-note">{s.note}</span>
               </motion.div>
             ))}
@@ -230,14 +249,24 @@ function Credits() {
   return (
     <section id="contact" className="credits">
       <div className="shell">
+        <Reveal className="section-head">
+          <span className="tc">TC 00:03 — END CREDITS</span>
+        </Reveal>
+
         <Reveal>
-          <span className="tc tc-credits">TC 00:03 — END CREDITS</span>
           <h2 className="big">
             Cut. Render. <span className="accent">Ship.</span>
           </h2>
         </Reveal>
 
-        <Reveal delay={0.1}>
+        <Reveal delay={0.08}>
+          <div className="credit-id">
+            <span className="ci-name">{profile.name}</span>
+            <span className="ci-role">{profile.roles.join(' / ')}</span>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.14}>
           <div className="contact-row">
             <a className="clink" href={`mailto:${profile.email}`}>✉ {profile.email}</a>
             <a className="clink" href={profile.github} target="_blank" rel="noreferrer">
@@ -271,12 +300,11 @@ function ScrollProgress() {
 }
 
 export default function App() {
-  const tc = useTimecode()
   return (
     <>
       <ScrollProgress />
       <Chrome />
-      <TopBar tc={tc} />
+      <TopBar />
       <main>
         <Hero />
         <Work />

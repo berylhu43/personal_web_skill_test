@@ -2,7 +2,7 @@
 
 export const profile = {
   name: 'Yuxuan Hu',
-  roles: ['Data Scientist', 'ML Engineer'],
+  roles: ['Data Scientist', 'AI Engineer'],
   github: 'https://github.com/berylhu43',
   email: 'huhuyuyuxuan@gmail.com',
 }
@@ -27,10 +27,10 @@ export const projects = [
   },
   {
     name: 'Clinical Knowledge Graph Extraction',
-    kind: 'NLP · Information Extraction',
+    kind: 'NLP · Agentic AI',
     blurb:
-      'An extraction pipeline that pulls entities and their relationships from clinical text into a structured knowledge graph for downstream querying.',
-    tags: ['NLP', 'Knowledge Graph', 'Extraction', 'LLMs'],
+      'A multi-agent extraction pipeline that pulls entities and their relationships from clinical text into a structured knowledge graph for downstream querying.',
+    tags: ['NLP', 'Agentic AI', 'Multi-Agent', 'Knowledge Graph'],
     repo: 'https://github.com/berylhu43/Clinical_KG_OS_LLM',
   },
   {
@@ -51,6 +51,7 @@ export const trajectory = [
     tag: 'Past',
     note: 'Camera as instrument — composition, attention, the cut.',
     state: 'done',
+    link: 'https://youtu.be/DEVP07YtZg4',
   },
   {
     label: 'Data Science',
