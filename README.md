@@ -1,13 +1,13 @@
 # Yuxuan Hu — Personal Website
 
-A personal site for [@berylhu43](https://github.com/berylhu43) — Yuxuan Hu, data scientist & ML
+A personal site for [@berylhu43](https://github.com/berylhu43) — Yuxuan Hu, data scientist & AI
 engineer with a film background. Built with **React + Vite**.
 
 Aesthetic: a cinematic "grading-suite / edit-bay" — deep cool graphite, near-monochrome UI, a
 single cyan readout accent, cinematic letterboxing, corner registration marks, and a live
 timecode. The only warmth comes from the film stills.
 
-🔗 **Live:** https://berylhu43.github.io/personal_web_skill_test/
+🔗 **Live:** https://berylhu43.github.io/
 
 ## Develop
 
@@ -18,16 +18,19 @@ npm run build    # production build → dist/
 npm run preview  # preview the production build
 ```
 
-## Deploy (GitHub Pages)
+## Deploy (GitHub Pages — user/profile site)
 
-Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site and
-publishes it to GitHub Pages.
+This is configured as a **user site** at the root URL `https://berylhu43.github.io/`, which
+requires the repository to be named **`berylhu43.github.io`**.
+
+Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds the site and publishes
+it to GitHub Pages.
 
 **One-time setup:** in the repo, go to **Settings → Pages → Build and deployment**, and set
 **Source** to **GitHub Actions**.
 
-> If you rename the repository, update `base` in `vite.config.js` to match the new
-> `/<repo-name>/` path.
+> The base path in `vite.config.js` is `/` for a root user site. If you instead serve this as a
+> project page (`/<repo-name>/`), set `base` to `/<repo-name>/`.
 
 ## Editing content
 
